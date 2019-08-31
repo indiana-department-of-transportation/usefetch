@@ -1,0 +1,50 @@
+{
+  "name": "usefetch",
+  "version": "0.0.1",
+  "description": "Custom fetch react hook",
+  "main": "dist/useFetch.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "React",
+    "Fetch",
+    "Hook"
+  ],
+  "author": "jasmith79",
+  "license": "MIT",
+  "peerDependencies": {
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.9.0",
+    "prop-types": "^15.7.2",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/types": "^7.5.5",
+    "@types/enzyme-adapter-react-16": "^1.0.5",
+    "@types/jest": "^24.0.18",
+    "@types/jsdom": "^12.2.4",
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.9.0",
+    "babel-plugin-transform-es2015-modules-umd": "^6.24.1",
+    "enzyme": "^3.10.0",
+    "enzyme-adapter-react-16": "^1.14.0",
+    "fetch-ponyfill": "^6.1.0",
+    "jest": "^24.9.0",
+    "jsdom": "^15.1.1",
+    "jsdom-global": "^3.0.2",
+    "prop-types": "^15.7.2",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "source-map-loader": "^0.2.4",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^6.0.4",
+    "tslint": "^5.18.0",
+    "typedoc": "^0.15.0",
+    "typescript": "^3.5.3"
+  }
+}
