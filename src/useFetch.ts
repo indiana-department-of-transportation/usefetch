@@ -9,7 +9,6 @@
  */
 
 import { useEffect, useState } from 'react';
-import { any } from 'prop-types';
 
 export interface IUseFetchState {
   data: any,
@@ -53,6 +52,7 @@ export default function useFetch({
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState();
   const cancel = () => setCancelled(true);
+
   useEffect(() => {
     const fetchData = async (url: string) => {
       if (!isLoading) {
@@ -80,7 +80,10 @@ export default function useFetch({
           }
 
           if (!isCancelled) {
-            if (cache) REQUEST_CACHE[url] = json;
+            if (cache) {
+              REQUEST_CACHE[url] = json;
+            }
+            setError(undefined);
             updateData(json);
           }
         } catch (e) {
@@ -96,7 +99,7 @@ export default function useFetch({
       }
     };
 
-    if (request && !isCancelled) {
+    if (request && !isCancelled && !isLoading) {
       const url = ((): string => {
         switch (true) {
           case request instanceof Request:
@@ -106,16 +109,34 @@ export default function useFetch({
             return (request as string);
 
           default:
-            throw new Error(`Unknown request type for ${request}`);
+            setError(new Error(`Unknown request type for '${request}'.`));
+            return '';
         }
       })();
 
-      if (!cache || !REQUEST_CACHE.hasOwnProperty(url)) fetchData(url);
+      if (url) {
+        if (!REQUEST_CACHE.hasOwnProperty(url)) {
+          fetchData(url);
+        } else {
+          const cached = REQUEST_CACHE[url];
+          if (cached instanceof Error) {
+            setError(cached);
+          } else {
+            updateData(cached);
+          }
+        }
+      }
     }
-  }, [request]);
+  }, []);
 
   return {
-    data,
+    get data () {
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
     isLoading,
     isCancelled,
     cancel,
