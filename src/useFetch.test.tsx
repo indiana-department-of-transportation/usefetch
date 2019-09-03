@@ -8,187 +8,186 @@
  * @copyright INDOT, 2019
  */
 
-import 'jsdom-global/register';
-import React from 'react';
-import Adapter from 'enzyme-adapter-react-16';
-import Enzyme, { mount } from 'enzyme';
 import fetchPonyfill from 'fetch-ponyfill';
-import { act } from 'react-dom/test-utils';
+import { renderHook, act } from '@testing-library/react-hooks'
 
-import useFetch, {
-  IUseFetchState,
-  IUseFetchArgs,
-  IPojo,
-} from './useFetch';
+import useFetch from './useFetch';
 
-Enzyme.configure({ adapter: new Adapter() });
 const { Request } = fetchPonyfill();
 
-type TestHookProps = {
-  useHook: (x: IUseFetchArgs) => IUseFetchState,
-  args: IUseFetchArgs,
-}
-
-type DisplayProps = {
-  result: IUseFetchState,
-}
-
-type HTTPMethod = 'GET' | 'POST' | 'DELETE' | 'UPDATE';
-
-type RequestOpts = {
-  method?: HTTPMethod,
-  headers?: Headers,
-  body?: string,
-}
-
 const globalThis = (new Function("return this;"))();
-
-const Display = ({ result }: DisplayProps) => <div>{JSON.stringify(result)}</div>;
-const TestHook = ({ useHook, args }: TestHookProps) => {
-  const res = useHook(args);
-  return <Display result={res} />;
-  // var res: unknown;
-  // act(() => {
-  //   res = useHook(args);
-  // });
-  // return <Display result={ res as IUseFetchState }/>;
-};
-
 globalThis.Request = Request;
 
-const fakeResponseFactory = async (returnValue: any) => Promise.resolve({
+const fakeResponseFactory = async (returnValue: any, status: number = 200) => ({
   json: () => new Promise(res => setTimeout(res, 0, returnValue)),
+  status,
 });
 
 beforeEach(() => {
   globalThis.fetch = jest.fn();
-  globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({}));
 });
 
 describe('useFetch', () => {
-  it('should fetch data from a url', () => {
-    const args = {
-      request: 'http://foo.com',
-    };
+  it('should take a string url to fetch data from', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 1 }));
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({ request: 'http://foobara.com' }));
+    expect(result.current.data).toEqual({});
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ foo: 1 });
+  });
 
-    var wrapper: unknown;
+  it('should take a Request object instead of a string', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 1 }));
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({ request: new Request('http://foobarb.com') }));
+    expect(result.current.data).toEqual({});
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ foo: 1 });
+  });
+
+  it('should have a result with a isCancelled property and a cancel function', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({ request: 'http://foobarc.com' }));
+    expect(result.current.isCancelled).toBe(false);
     act(() => {
-      wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
+      result.current.cancel();
     });
 
-    const { result } = (wrapper as Enzyme.ReactWrapper).find(Display).props();
-    expect(result.data).toEqual({});
+    await waitForNextUpdate();
+    expect(result.current.isCancelled).toBe(true);
   });
 
-  xit('should fetch data using a Request object', () => {
-    const mockRequest = new Request('http://fobar.com');
-    const args = {
-      request: mockRequest as Request,
+  it('should have a result with a isLoading property', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({ request: 'http://foobard.com' }));
+    expect(result.current.isLoading).toBe(true);
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoading).toEqual(false);
+  });
+
+  it('should have a result with an error property', () => {
+    globalThis.fetch = () => {
+      throw new Error('catch me if you can');
     };
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.data).toEqual({});
+    const { result } = renderHook(() => useFetch({ request: 'http://foobare.com' }));
+    expect(result.current.error).toEqual(new Error('catch me if you can'));
   });
 
-  xit('should use initialData when present', () => {
-    const args = {
-      request: 'http://foo.com',
-      initialData: 3,
-    };
+  it('should optionally take initialData', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 2 }));
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobarf.com',
+      initialData: { foo: 1 }
+    }));
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.data).toBe(3);
+    expect(result.current.data).toEqual({ foo: 1 });
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ foo: 2 });
   });
 
-  xit('should do nothing when not presented with a url or request', () => {
-  const args = {
-    request: '',
-    intiialData: 'bar',
-  };
+  it('should do nothing if the request is empty', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: '',
+      initialData: { foo: 1 },
+    }));
 
-  const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.data).toEqual('bar');
+    // await Promise.race([
+    //   waitForNextUpdate(),
+    //   new Promise(res => setTimeout(res, 10)),
+    // ]);
+    // await waitForNextUpdate();
+
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(result.current.data).toEqual({ foo: 1 });
   });
 
-  xit('should update with new data from the fetch', (done) => {
-    const f = jest.fn();
-    f.mockReturnValueOnce(fakeResponseFactory('foo'));
-    globalThis.fetch = f;
-    const args = {
-      request: 'http://bar.com',
-      initialData: 'baz',
-    };
+  it('should take an optional timeout', async () => {
+    globalThis.fetch = () => new Promise((res) => {
+      setTimeout(res, 500);
+    });
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.data).toEqual('baz');
-    setTimeout(() => {
-      wrapper.update();
-      const { result } = wrapper.find(Display).props();
-      expect(result.data).toEqual('foo');
-      done();
-    }, 10);
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobargh.com',
+      initialData: { foo: 1 },
+      timeout: 1,
+    }));
+
+    expect(result.current.data).toEqual({ foo: 1 });
+    await waitForNextUpdate();
+    expect(() => result.current.data).toThrow();
+    expect(result.current.error).toEqual(new Error('Request timed out.'));
   });
 
-  xit('should have an isLoading that accurately reports loading status', (done) => {
-    const f = jest.fn();
-    f.mockReturnValueOnce(fakeResponseFactory('hi'));
-    globalThis.fetch = f;
-    const args = {
-      request: 'http://baz.com',
-    };
+  it('should cache the result of the request if asked', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 1 }));
+    const { waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobari.com',
+      cache: true,
+    }));
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.isLoading).toEqual(true);
-    setTimeout(() => {
-      wrapper.update();
-      const { result } = wrapper.find(Display).props();
-      expect(result.isLoading).toEqual(false);
-      done();
-    }, 10);
+    await waitForNextUpdate();
+    const res2 = renderHook(() => useFetch({
+      request: 'http://foobari.com',
+    }));
+    await new Promise(res => setTimeout(res, 5));
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(res2.result.current.data).toEqual({ foo: 1 });
   });
 
-  xit('should have an error property that accurately reflects error status', (done) => {
-    const f = jest.fn();
-    f.mockReturnValueOnce(Promise.reject(new Error('aaargh')));
-    globalThis.fetch = f;
-    const args = {
-      request: 'http://qux.com',
-    };
+  it('should continue to fetch if not', async () => {
+    globalThis.fetch
+      .mockReturnValueOnce(fakeResponseFactory({ foo: 1 }))
+      .mockReturnValueOnce(fakeResponseFactory({ foo: 2 }));
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.error).toEqual(null);
-    setTimeout(() => {
-      wrapper.update();
-      const { result } = wrapper.find(Display).props();
-      expect(result.error).toEqual(new Error('aaargh'));
-      done();
-    }, 10);
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobaz.com',
+    }));
+
+    await waitForNextUpdate();
+    expect(result.current.data).toEqual({ foo: 1 });
+
+    const res2 = renderHook(() => useFetch({
+      request: 'http://foobark.com',
+    }));
+    await res2.waitForNextUpdate();
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(res2.result.current.data).toEqual({ foo: 2 });
   });
 
-  xit('should have a cancel function that prevents data update', (done) => {
-    const f = jest.fn();
-    f.mockReturnValueOnce(fakeResponseFactory('foo'));
-    globalThis.fetch = f;
-    const args = {
-      request: 'http://foo.com',
-      initialData: 'baz',
-    };
+  it('should throw on a bad HTTP response status', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 1 }, 500));
 
-    const wrapper = mount(<TestHook args={args} useHook={(x: IUseFetchArgs) => useFetch(x)} />);
-    const { result } = wrapper.find(Display).props();
-    expect(result.data).toEqual('baz');
-    result.cancel();
-    setTimeout(() => {
-      wrapper.update();
-      const { result } = wrapper.find(Display).props();
-      expect(result.data).toEqual('baz');
-      done();
-    }, 10);
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobarl.com',
+    }));
+
+    await waitForNextUpdate();
+    expect(result.current.error).toEqual(new Error('HTTP error 500'));
+  });
+
+  it('should throw on an empty HTTP response', async () => {
+    globalThis.fetch.mockReturnValueOnce(fakeResponseFactory(''));
+
+    const { result, waitForNextUpdate } = renderHook(() => useFetch({
+      request: 'http://foobarm.com',
+    }));
+
+    await waitForNextUpdate();
+    expect(result.current.error).toEqual(new Error('Empty response'));
+  });
+
+  it('should throw on an unknown request argument', async () => {
+    // Don't have to worry about this if using typescript, but...
+    let request: unknown;
+    request = true;
+    const { result } = renderHook(() => useFetch({
+      request: (request as string),
+    }));
+
+    expect(result.current.error).toEqual(new Error('Unknown request type for \'true\'.'));
   });
 });
