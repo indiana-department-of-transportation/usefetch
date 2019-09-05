@@ -1,6 +1,6 @@
 {
   "name": "usefetch",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Custom fetch react hook",
   "main": "dist/useFetch.js",
   "scripts": {
