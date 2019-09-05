@@ -146,7 +146,7 @@ describe('useFetch', () => {
 
     expect(result.current.data).toEqual({ foo: 1 });
     await waitForNextUpdate();
-    expect(() => result.current.data).toThrow();
+
     expect(result.current.error).toEqual(new Error('Request timed out.'));
   });
 

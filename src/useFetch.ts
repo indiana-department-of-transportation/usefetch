@@ -36,6 +36,8 @@ const REQUEST_CACHE: IPojo = {};
  * a state from a call to useState that gets updated REQUEST_CACHE a result comes back.
  *
  * @param {Request|string} request The string url or URL object or Request object to fetch.
+ *  **NOTE:** if using a Request object it *must* be wrapped in a call to useState to prevent
+ *  an infinite render loop.
  * @param {number} timeout The timeout, defaults to none.
  * @param {Any} initialData The initial data to pass to useState. Defaults to null.
  * @param {boolean} cache Whether or not to cache the request to prevent unnecessary fetches.
@@ -130,13 +132,7 @@ export default function useFetch({
   }, [request]);
 
   return {
-    get data () {
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
+    data,
     isLoading,
     isCancelled,
     cancel,
