@@ -8,6 +8,7 @@
  * @copyright INDOT, 2019
  */
 
+import { useState } from 'react';
 import fetchPonyfill from 'fetch-ponyfill';
 import { renderHook, act } from '@testing-library/react-hooks'
 
@@ -39,11 +40,40 @@ describe('useFetch', () => {
 
   it('should take a Request object instead of a string', async () => {
     globalThis.fetch.mockReturnValueOnce(fakeResponseFactory({ foo: 1 }));
-    const { result, waitForNextUpdate } = renderHook(() => useFetch({ request: new Request('http://foobarb.com') }));
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const [request] = useState(new Request('http://foobarb.com'));
+      return useFetch({ request });
+    });
     expect(result.current.data).toEqual({});
     await waitForNextUpdate();
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     expect(result.current.data).toEqual({ foo: 1 });
+  });
+
+  it('should rerun when request chanegs', async () => {
+    let setRequest: unknown;
+    globalThis.fetch
+      .mockReturnValueOnce(fakeResponseFactory({ foo: 1 }))
+      .mockReturnValueOnce(fakeResponseFactory({ foo: 2 }));
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const [request, setReq] = useState(new Request('http://foobarb.com'));
+      setRequest = setReq;
+      return useFetch({ request });
+    });
+
+    expect(result.current.data).toEqual({});
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ foo: 1 });
+
+    act(() => {
+      (setRequest as Function)(new Request("http://barfoo.com"));
+    });
+
+    await waitForNextUpdate();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(result.current.data).toEqual({ foo: 2 });
   });
 
   it('should have a result with a isCancelled property and a cancel function', async () => {

@@ -61,7 +61,7 @@ typings/
 .next
 
 # compiled test files
-dist/authheaders.test.*
+dist/useFetch.test.*
 
 diff.txt
 commit-msg.txt

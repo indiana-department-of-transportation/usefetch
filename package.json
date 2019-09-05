@@ -1,10 +1,17 @@
 {
   "name": "usefetch",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Custom fetch react hook",
   "main": "dist/useFetch.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "npm run type-check -- --watch",
+    "build": "npm run build:ts && npm run build:js",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:js": "babel dist/useFetch.js -o dist/useFetch.umd.js  --source-maps inline",
+    "build:ts": "tsc --outDir ./dist",
+    "gen-docs": "typedoc --readme README.md --excludeNotExported --ignoreCompilerErrors --exclude '{**/*spec*,**/node_modules/**,**/spec/**}' --out docs ./src; touch docs/.nojekyll"
   },
   "keywords": [
     "React",

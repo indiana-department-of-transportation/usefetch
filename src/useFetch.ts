@@ -127,7 +127,7 @@ export default function useFetch({
         }
       }
     }
-  }, []);
+  }, [request]);
 
   return {
     get data () {
