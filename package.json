@@ -1,5 +1,5 @@
 {
-  "name": "usefetch",
+  "name": "@indot/usefetch",
   "version": "0.0.4",
   "description": "Custom fetch react hook",
   "main": "dist/useFetch.js",
