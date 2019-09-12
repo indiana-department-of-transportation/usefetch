@@ -1,8 +1,9 @@
 {
   "name": "@indot/usefetch",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Custom fetch react hook",
-  "main": "dist/useFetch.js",
+  "main": "dist/useFetch.umd.js",
+  "types": "dist/useFetch.d.ts",
   "scripts": {
     "test": "jest",
     "type-check": "tsc --noEmit",
@@ -44,8 +45,6 @@
     "jsdom": "^15.1.1",
     "jsdom-global": "^3.0.2",
     "prop-types": "^15.7.2",
-    "react": "^16.9.0",
-    "react-dom": "^16.9.0",
     "react-test-renderer": "^16.9.0",
     "source-map-loader": "^0.2.4",
     "ts-jest": "^24.0.2",
