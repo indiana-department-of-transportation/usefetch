@@ -1,3 +1,4 @@
+"use strict";
 /* eslint-disable react-hooks/exhaustive-deps */
 /**
  * useFetch.js
@@ -7,7 +8,8 @@
  * @license MIT
  * @copyright INDOT, 2019
  */
-import { useEffect, useState } from 'react';
+Object.defineProperty(exports, "__esModule", { value: true });
+const react_1 = require("react");
 const REQUEST_CACHE = {};
 /**
  * @description Custom hook for AJAX data. Takes either a Request object or a url and returns
@@ -21,13 +23,13 @@ const REQUEST_CACHE = {};
  * @param {boolean} cache Whether or not to cache the request to prevent unnecessary fetches.
  * @returns {Object} The current status of the fetch.
  */
-export default function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
-    const [isCancelled, setCancelled] = useState(false);
-    const [data, updateData] = useState(initialData);
-    const [isLoading, setLoading] = useState(false);
-    const [error, setError] = useState();
+function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
+    const [isCancelled, setCancelled] = react_1.useState(false);
+    const [data, updateData] = react_1.useState(initialData);
+    const [isLoading, setLoading] = react_1.useState(false);
+    const [error, setError] = react_1.useState();
     const cancel = () => setCancelled(true);
-    useEffect(() => {
+    react_1.useEffect(() => {
         const fetchData = async (url) => {
             if (!isLoading) {
                 try {
@@ -104,4 +106,5 @@ export default function useFetch({ request, timeout = 0, initialData = {}, cache
         error,
     };
 }
+exports.default = useFetch;
 //# sourceMappingURL=useFetch.js.map

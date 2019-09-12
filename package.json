@@ -8,9 +8,8 @@
     "test": "jest",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
-    "build": "npm run build:ts && npm run build:js",
+    "build": "npm run build:ts && npm run gen-docs",
     "build:types": "tsc --emitDeclarationOnly",
-    "build:js": "babel dist/useFetch.js -o dist/useFetch.umd.js  --source-maps inline",
     "build:ts": "tsc --outDir ./dist",
     "gen-docs": "typedoc --readme README.md --excludeNotExported --ignoreCompilerErrors --exclude '{**/*spec*,**/node_modules/**,**/spec/**}' --out docs ./src; touch docs/.nojekyll"
   },
@@ -29,17 +28,12 @@
     "react-dom": "^16.9.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.5.5",
-    "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "@babel/types": "^7.5.5",
     "@testing-library/react-hooks": "^2.0.1",
     "@types/enzyme-adapter-react-16": "^1.0.5",
     "@types/jest": "^24.0.18",
     "@types/jsdom": "^12.2.4",
     "@types/react": "^16.9.2",
     "@types/react-dom": "^16.9.0",
-    "babel-plugin-transform-es2015-modules-umd": "^6.24.1",
     "fetch-ponyfill": "^6.1.0",
     "jest": "^24.9.0",
     "jsdom": "^15.1.1",
