@@ -11,7 +11,7 @@ export interface IUseFetchState {
     isCancelled: boolean;
     isLoading: boolean;
     cancel: () => void;
-    error: Error | null;
+    error: Error | null | undefined;
 }
 export interface IUseFetchArgs {
     request: Request | string;

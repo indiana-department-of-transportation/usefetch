@@ -24,16 +24,21 @@ const REQUEST_CACHE = {};
  * @returns {Object} The current status of the fetch.
  */
 function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
+    const isMounted = react_1.useRef(true);
     const [isCancelled, setCancelled] = react_1.useState(false);
     const [data, updateData] = react_1.useState(initialData);
     const [isLoading, setLoading] = react_1.useState(false);
     const [error, setError] = react_1.useState();
     const cancel = () => setCancelled(true);
+    const update = (fn, arg) => {
+        if (isMounted.current)
+            fn(arg);
+    };
     react_1.useEffect(() => {
         const fetchData = async (url) => {
             if (!isLoading) {
                 try {
-                    setLoading(true);
+                    update(setLoading, true);
                     const tout = timeout && timeout > 0
                         ? new Promise((_, rej) => setTimeout(rej, timeout, new Error('Request timed out.')))
                         : null;
@@ -53,17 +58,17 @@ function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
                         if (cache) {
                             REQUEST_CACHE[url] = json;
                         }
-                        setError(undefined);
-                        updateData(json);
+                        update(setError, undefined);
+                        update(updateData, json);
                     }
                 }
                 catch (e) {
                     if (cache)
                         REQUEST_CACHE[url] = e;
-                    setError(e);
+                    update(setError, e);
                 }
                 finally {
-                    setLoading(false);
+                    update(setLoading, false);
                 }
             }
             if (!request && data !== initialData) {
@@ -78,7 +83,7 @@ function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
                     case typeof request === 'string':
                         return request;
                     default:
-                        setError(new Error(`Unknown request type for '${request}'.`));
+                        update(setError, new Error(`Unknown request type for '${request}'.`));
                         return '';
                 }
             })();
@@ -89,15 +94,20 @@ function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
                 else {
                     const cached = REQUEST_CACHE[url];
                     if (cached instanceof Error) {
-                        setError(cached);
+                        update(setError, cached);
                     }
                     else {
-                        updateData(cached);
+                        update(updateData, cached);
                     }
                 }
             }
         }
     }, [request]);
+    react_1.useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
     return {
         data,
         isLoading,
