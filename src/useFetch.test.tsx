@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import fetchPonyfill from 'fetch-ponyfill';
-import { renderHook, act } from '@testing-library/react-hooks'
+import { renderHook, act } from '@testing-library/react-hooks';
 
 import useFetch from './useFetch';
 
@@ -50,7 +50,7 @@ describe('useFetch', () => {
     expect(result.current.data).toEqual({ foo: 1 });
   });
 
-  it('should rerun when request chanegs', async () => {
+  it('should rerun when request changes', async () => {
     let setRequest: unknown;
     globalThis.fetch
       .mockReturnValueOnce(fakeResponseFactory({ foo: 1 }))
@@ -122,12 +122,6 @@ describe('useFetch', () => {
       request: '',
       initialData: { foo: 1 },
     }));
-
-    // await Promise.race([
-    //   waitForNextUpdate(),
-    //   new Promise(res => setTimeout(res, 10)),
-    // ]);
-    // await waitForNextUpdate();
 
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(result.current.data).toEqual({ foo: 1 });

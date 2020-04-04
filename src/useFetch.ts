@@ -8,7 +8,7 @@
  * @copyright INDOT, 2019
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export interface IUseFetchState {
   data: any,
@@ -49,17 +49,21 @@ export default function useFetch({
   initialData = {},
   cache = false,
 }: IUseFetchArgs): IUseFetchState {
+  const isMounted = useRef(true);
   const [isCancelled, setCancelled] = useState(false);
   const [data, updateData] = useState(initialData);
   const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState();
+  const [error, setError] = useState<Error>();
   const cancel = () => setCancelled(true);
+  const update = <T>(fn: (state: T) => void, arg: T) => {
+    if (isMounted.current) fn(arg);
+  };
 
   useEffect(() => {
     const fetchData = async (url: string) => {
       if (!isLoading) {
         try {
-          setLoading(true);
+          update(setLoading, true);
           const tout = timeout && timeout > 0
             ? new Promise((_, rej) => setTimeout(rej, timeout, new Error('Request timed out.')))
             : null;
@@ -85,14 +89,14 @@ export default function useFetch({
             if (cache) {
               REQUEST_CACHE[url] = json;
             }
-            setError(undefined);
-            updateData(json);
+            update(setError, undefined);
+            update(updateData, json);
           }
         } catch (e) {
           if (cache) REQUEST_CACHE[url] = e;
-          setError(e);
+          update(setError, e);
         } finally {
-          setLoading(false);
+          update(setLoading, false);
         }
       }
 
@@ -111,7 +115,7 @@ export default function useFetch({
             return (request as string);
 
           default:
-            setError(new Error(`Unknown request type for '${request}'.`));
+            update(setError, new Error(`Unknown request type for '${request}'.`));
             return '';
         }
       })();
@@ -122,14 +126,20 @@ export default function useFetch({
         } else {
           const cached = REQUEST_CACHE[url];
           if (cached instanceof Error) {
-            setError(cached);
+            update(setError, cached);
           } else {
-            updateData(cached);
+            update(updateData, cached);
           }
         }
       }
     }
   }, [request]);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   return {
     data,
