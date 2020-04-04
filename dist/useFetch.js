@@ -23,7 +23,7 @@ const REQUEST_CACHE = {};
  * @param {boolean} cache Whether or not to cache the request to prevent unnecessary fetches.
  * @returns {Object} The current status of the fetch.
  */
-function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
+function useFetch({ request, timeout = 0, initialData = {}, cache = false, fetchFn = fetch, }) {
     const isMounted = react_1.useRef(true);
     const [isCancelled, setCancelled] = react_1.useState(false);
     const [data, updateData] = react_1.useState(initialData);
@@ -31,7 +31,7 @@ function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
     const [error, setError] = react_1.useState();
     const cancel = () => setCancelled(true);
     const update = (fn, arg) => {
-        if (isMounted.current)
+        if (isMounted.current && !isCancelled)
             fn(arg);
     };
     react_1.useEffect(() => {
@@ -44,23 +44,28 @@ function useFetch({ request, timeout = 0, initialData = {}, cache = false, }) {
                         : null;
                     // Type assertion is ok here because the other branch will throw
                     const req = (tout
-                        ? Promise.race([tout, fetch(request)])
-                        : fetch(request));
+                        ? Promise.race([tout, fetchFn(request)])
+                        : fetchFn(request));
                     const resp = await req;
                     if (resp.status < 200 || resp.status >= 400) {
                         throw new Error(`HTTP error ${resp.status}`);
                     }
-                    const json = await resp.json();
-                    if (!json) {
+                    const text = await resp.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    }
+                    catch (err) {
+                        data = text;
+                    }
+                    if (!data) {
                         throw new Error('Empty response');
                     }
-                    if (!isCancelled) {
-                        if (cache) {
-                            REQUEST_CACHE[url] = json;
-                        }
-                        update(setError, undefined);
-                        update(updateData, json);
+                    if (cache) {
+                        REQUEST_CACHE[url] = data;
                     }
+                    update(setError, undefined);
+                    update(updateData, data);
                 }
                 catch (e) {
                     if (cache)

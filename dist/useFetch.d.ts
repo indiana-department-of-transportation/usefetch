@@ -18,6 +18,7 @@ export interface IUseFetchArgs {
     timeout?: number;
     initialData?: any;
     cache?: boolean;
+    fetchFn?: typeof fetch;
 }
 export interface IPojo {
     [key: string]: any;
@@ -34,4 +35,4 @@ export interface IPojo {
  * @param {boolean} cache Whether or not to cache the request to prevent unnecessary fetches.
  * @returns {Object} The current status of the fetch.
  */
-export default function useFetch({ request, timeout, initialData, cache, }: IUseFetchArgs): IUseFetchState;
+export default function useFetch({ request, timeout, initialData, cache, fetchFn, }: IUseFetchArgs): IUseFetchState;

@@ -23,6 +23,7 @@ export interface IUseFetchArgs {
   timeout?: number,
   initialData?: any,
   cache?: boolean,
+  fetchFn?: typeof fetch,
 }
 
 export interface IPojo {
@@ -48,6 +49,7 @@ export default function useFetch({
   timeout = 0,
   initialData = {},
   cache = false,
+  fetchFn = fetch,
 }: IUseFetchArgs): IUseFetchState {
   const isMounted = useRef(true);
   const [isCancelled, setCancelled] = useState(false);
@@ -56,7 +58,7 @@ export default function useFetch({
   const [error, setError] = useState<Error>();
   const cancel = () => setCancelled(true);
   const update = <T>(fn: (state: T) => void, arg: T) => {
-    if (isMounted.current) fn(arg);
+    if (isMounted.current && !isCancelled) fn(arg);
   };
 
   useEffect(() => {
@@ -70,8 +72,8 @@ export default function useFetch({
 
           // Type assertion is ok here because the other branch will throw
           const req = (tout
-            ? Promise.race([tout, fetch(request)])
-            : fetch(request)
+            ? Promise.race([tout, fetchFn(request)])
+            : fetchFn(request)
           ) as Promise<Response>;
 
           const resp = await req;
@@ -80,18 +82,24 @@ export default function useFetch({
             throw new Error(`HTTP error ${resp.status}`);
           }
 
-          const json = await resp.json();
-          if (!json) {
-            throw new Error('Empty response');
+          const text = await resp.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (err) {
+            data = text;
           }
 
-          if (!isCancelled) {
-            if (cache) {
-              REQUEST_CACHE[url] = json;
-            }
-            update(setError, undefined);
-            update(updateData, json);
+          if (!data) {
+            throw new Error('Empty response');
           }
+          
+          if (cache) {
+            REQUEST_CACHE[url] = data;
+          }
+
+          update(setError, undefined);
+          update(updateData, data);
         } catch (e) {
           if (cache) REQUEST_CACHE[url] = e;
           update(setError, e);
