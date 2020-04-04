@@ -1,6 +1,6 @@
 {
   "name": "@indot/usefetch",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Custom fetch react hook",
   "main": "dist/useFetch.js",
   "types": "dist/useFetch.d.ts",
